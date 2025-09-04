@@ -9,20 +9,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Update
-        run: |
-          git submodule update --init --remote
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "chore: bump fbs version"
+
       - name: Setup Python environment
         uses: ./.github/actions/setup-python
+
+      - name: Update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git submodule update --init --remote
+          git add .
+          git commit -m "chore: bump fbs version"
+
       - name: Bump version
         run: |
           uv version --bump minor
           git add .
-          git commit -m "chore: release v$(uv version --short)"
+          git commit -m "chore: release $(uv version --short)"
           git tag "v$(uv version --short)"
-          git push --follow-tags
-
+          git push && git push --tags
