@@ -179,7 +179,7 @@ jobs:
         with:
           images: |
             registry.cn-shanghai.aliyuncs.com/prts/${{ github.event.repository.name }}
-            ghcr.io/prts/${{ github.event.repository.name }}
+            ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
