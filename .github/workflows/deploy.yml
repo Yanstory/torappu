@@ -88,7 +88,7 @@ jobs:
       - name: Generate Image Name and Scope
         id: image
         run: |
-          REPO=registry.cn-shanghai.aliyuncs.com/prts/${{ github.event.repository.name }}
+          REPO=prts/${{ github.event.repository.name }}
           echo "IMAGE=${REPO,,}" >> $GITHUB_OUTPUT
           echo "SCOPE=${{ hashFiles('**/uv.lock') }}-${{ matrix.platform }}" >> $GITHUB_OUTPUT
           PLATFORM="${{ matrix.platform }}"
@@ -120,7 +120,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform-artifact }}-digests
+          name: ${{ steps.image.outputs.ARTIFACT }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -179,6 +179,7 @@ jobs:
         with:
           images: |
             registry.cn-shanghai.aliyuncs.com/prts/${{ github.event.repository.name }}
+            ghcr.io/prts/${{ github.event.repository.name }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
