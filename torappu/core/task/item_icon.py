@@ -56,6 +56,11 @@ class ItemIcon(Task):
             or texture_name
         ) + ".png"
 
+    def get_rarity_bg_path(self, texture_name: str, canonical_name: str):
+        return self.dict_rarity_bg.get(texture_name.lower()) or self.dict_rarity_bg.get(
+            canonical_name
+        )
+
     async def unpack(self, ab_path: str):
         env = UnityPy.load(ab_path)
         for obj in filter(lambda obj: obj.type.name == "Sprite", env.objects):
@@ -80,7 +85,7 @@ class ItemIcon(Task):
                 RAW_DIR.joinpath(self.get_output_name(texture.m_Name, canonical_name))
             )
 
-            bg_path = self.dict_rarity_bg.get(canonical_name)
+            bg_path = self.get_rarity_bg_path(texture.m_Name, canonical_name)
             if not bg_path:
                 continue
 
