@@ -19,12 +19,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git submodule update --init --remote
           git add .
-          git commit -m "chore: bump fbs version"
+          git diff-index --quiet HEAD || git commit -m "chore: bump fbs version"
 
       - name: Bump version
         run: |
           uv version --bump minor
           git add .
-          git commit -m "chore: release $(uv version --short)"
-          git tag "v$(uv version --short)"
-          git push && git push --tags
+          git diff-index --quiet HEAD || git commit -m "chore: release $(uv version --short)"
+
+      - name: Push commits
+        run: git push
