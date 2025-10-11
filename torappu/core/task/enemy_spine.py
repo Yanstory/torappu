@@ -40,22 +40,25 @@ class EnemySpine(Task):
         container_map = build_container_path(env)
 
         def unpack(data: MonoBehaviour, path: str):
-            base_dir = STORAGE_DIR / "asset" / "raw" / "enemy_spine" / path
-            base_dir.mkdir(parents=True, exist_ok=True)
+            dest_dir = STORAGE_DIR / "asset" / "raw" / "enemy_spine" / path
+            dest_dir.mkdir(parents=True, exist_ok=True)
             skel = cast("TextAsset", data.skeletonJSON.read())  # type: ignore
-            with open(base_dir / skel.m_Name, "wb") as f:
-                f.write(m_script_to_bytes(skel.m_Script))
+            skel_path = dest_dir.joinpath(skel.m_Name).with_suffix(".skel")
+            skel_path.write_bytes(m_script_to_bytes(skel.m_Script))
+
             atlas_assets = cast("list[PPtr[MonoBehaviour]]", data.atlasAssets)  # type: ignore
             for pptr in atlas_assets:
                 atlas_mono_behaviour = pptr.deref_parse_as_object()
                 atlas = cast("TextAsset", atlas_mono_behaviour.atlasFile.read())  # type: ignore
-                with open(base_dir / atlas.m_Name, "wb") as f:
-                    f.write(m_script_to_bytes(atlas.m_Script))
+                atlas_path = dest_dir.joinpath(atlas.m_Name).with_suffix(".atlas")
+                atlas_path.write_bytes(m_script_to_bytes(atlas.m_Script))
+
                 materials = cast("list[PPtr[Material]]", atlas_mono_behaviour.materials)  # type: ignore
                 for mat_pptr in materials:
                     mat = mat_pptr.deref_parse_as_object()
                     img, name = material2img(mat)
-                    img.save(base_dir / (name + ".png"))
+                    img_path = dest_dir.joinpath(name).with_suffix(".png")
+                    img.save(img_path)
 
         for obj in filter(lambda obj: obj.type.name == "GameObject", env.objects):
             if (game_obj := read_obj(GameObject, obj)) is None:
