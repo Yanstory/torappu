@@ -39,7 +39,7 @@ RUN ARCH=$(uname -m | sed 's/^aarch64$/arm64/') \
   && FOLDER="ffmpeg-8.0-audio-$ARCH-linux-gnu" \
   && apt-get update \
   && apt-get install -y --no-install-recommends curl \
-  && curl -sSL "https://github.com/MooncellWiki/ffmpeg-build/releases/download/v8.0-1/$FOLDER.tar.gz" -o /tmp/ffmpeg.tar.gz \
+  && curl -sSL "https://github.com/MooncellWiki/ffmpeg-build/releases/latest/download/$FOLDER.tar.gz" -o /tmp/ffmpeg.tar.gz \
   && tar -xzf /tmp/ffmpeg.tar.gz -C /tmp/ \
   && cd /tmp/$FOLDER/bin/ \
   && mv * /usr/bin/ \
