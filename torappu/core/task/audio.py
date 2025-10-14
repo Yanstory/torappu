@@ -13,7 +13,12 @@ from torappu.log import logger
 from torappu.models import Diff
 
 from .task import Task
-from .utils import build_container_path, read_obj
+from .utils import (
+    build_container_path,
+    read_obj,
+    read_subprocess_stderr,
+    read_subprocess_stdout,
+)
 
 AUDIO_DIR = STORAGE_DIR / "asset" / "raw" / "audio"
 
@@ -68,6 +73,13 @@ class Audio(Task):
             stderr=subprocess.DEVNULL,
         )
         await proc.wait()
+
+        if proc.returncode != 0:
+            returncode = proc.returncode
+            stdout = await read_subprocess_stdout(proc)
+            stderr = await read_subprocess_stderr(proc)
+
+            logger.error(f"ffmpeg error: {returncode=!r} {stdout=!r} {stderr=!r}")
 
     def combie(self, intro_path: Path | None, loop_path: Path, combie_path: Path):
         intro = AudioSegment.from_mp3(intro_path)

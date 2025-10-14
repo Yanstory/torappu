@@ -1,3 +1,4 @@
+from asyncio.subprocess import Process
 from typing import TypeVar
 
 import numpy as np
@@ -113,3 +114,23 @@ def get_name(src: FastPropertyName | str) -> str:
     if isinstance(src, FastPropertyName):
         return src.name
     return src
+
+
+async def read_subprocess_stdout(process: Process):
+    if process.stdout is None:
+        return
+
+    stdout_bytes = await process.stdout.read()
+    stdout = stdout_bytes.decode()
+
+    return stdout
+
+
+async def read_subprocess_stderr(process: Process):
+    if process.stderr is None:
+        return
+
+    stderr_bytes = await process.stderr.read()
+    stderr = stderr_bytes.decode()
+
+    return stderr
