@@ -186,7 +186,6 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
