@@ -1,6 +1,6 @@
 # Torappu
 
-An unpacker for anime game assets with a focus on resource extraction and analysis.
+An unpacker for Arknights assets with a focus on resource extraction and analysis.
 
 ## Features
 
