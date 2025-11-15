@@ -14,18 +14,19 @@ jobs:
         uses: ./.github/actions/setup-python
 
       - name: Update
+        id: submodule-update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git submodule update --init --remote
           git add .
+          git diff-index --quiet HEAD || echo "DIFF=true" >> $GITHUB_OUTPUT
           git diff-index --quiet HEAD || git commit -m "chore: bump fbs version"
 
       - name: Bump version
+        if: ${{steps.submodule-update.outputs.DIFF == 'true' }}
         run: |
           uv version --bump minor
           git add .
           git diff-index --quiet HEAD || git commit -m "chore: release $(uv version --short)"
-
-      - name: Push commits
-        run: git push
+          git push
