@@ -13,12 +13,13 @@ from .utils import read_obj
 BASE_PATH = STORAGE_DIR.joinpath("asset", "raw", "char_portrait")
 ATLAS_DEST = BASE_PATH / "atlas"
 
+
 class CharPortrait(Task):
     priority: ClassVar[int] = 3
 
     async def unpack(self, ab_path: str):
         env = UnityPy.load(ab_path)
-        await self.load_anon(env)
+        self.load_anon(env)
 
         for obj in filter(lambda obj: obj.type.name == "Sprite", env.objects):
             if (sprite := read_obj(Sprite, obj)) is None:

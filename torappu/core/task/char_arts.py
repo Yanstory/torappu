@@ -2,10 +2,7 @@ from typing import TYPE_CHECKING, ClassVar, cast
 
 import anyio
 import UnityPy
-from UnityPy.classes import (
-    MonoBehaviour,
-    Sprite,
-)
+from UnityPy.classes import MonoBehaviour, Sprite
 
 from torappu.consts import STORAGE_DIR
 from torappu.models import Diff
@@ -14,11 +11,7 @@ from .task import Task
 from .utils import get_tex_env_by_key, merge_alpha, read_obj
 
 if TYPE_CHECKING:
-    from UnityPy.classes import (
-        Material,
-        PPtr,
-        Texture2D,
-    )
+    from UnityPy.classes import Material, PPtr, Texture2D
 
 BASE_DIR = STORAGE_DIR.joinpath("asset", "raw", "char_arts")
 
@@ -28,7 +21,7 @@ class CharArts(Task):
 
     async def unpack(self, ab_path: str):
         env = UnityPy.load(ab_path)
-        await self.load_anon(env)
+        self.load_anon(env)
 
         for obj in filter(lambda obj: obj.type.name == "MonoBehaviour", env.objects):
             if (behaviour := read_obj(MonoBehaviour, obj)) is None:

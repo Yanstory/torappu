@@ -84,7 +84,7 @@ class CharSpine(Task):
 
     async def unpack_ab(self, real_path):
         env = UnityPy.load(real_path)
-        await self.load_anon(env)
+        self.load_anon(env)
 
         container_map = build_container_path(env)
 
@@ -255,4 +255,5 @@ class CharSpine(Task):
                 )
                 result.skin = {**spine.skin, **result.skin}
 
+            meta_path.write_text(result.model_dump_json(), encoding="utf-8")
             meta_path.write_text(result.model_dump_json(), encoding="utf-8")

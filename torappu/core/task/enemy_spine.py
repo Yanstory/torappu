@@ -35,7 +35,7 @@ class EnemySpine(Task):
 
     async def unpack_ab(self, real_path):
         env = UnityPy.load(real_path)
-        await self.load_anon(env)
+        self.load_anon(env)
 
         container_map = build_container_path(env)
 
@@ -91,4 +91,5 @@ class EnemySpine(Task):
 
     async def start(self):
         await asyncio.gather(*(self.client.resolve(ab) for ab in self.ab_list))
+        await asyncio.gather(*(self.unpack(ab) for ab in self.ab_list))
         await asyncio.gather(*(self.unpack(ab) for ab in self.ab_list))
