@@ -181,12 +181,11 @@ class Client:
                 task = self._resolve_tasks[path]
             else:
 
-                async def _download_and_write() -> str:
+                async def _download_and_write(hashed_ab_path: Path) -> str:
                     # 从 2.4.01 24-10-30-15-08-36-72419d 开始引入了anon/*
                     # hot update list里面的md5只有四位，改用oss给的crc当文件名
                     hashed_ab_path.parent.mkdir(parents=True, exist_ok=True)
                     (content, crc) = await self.download_ab(path)
-                    nonlocal hashed_ab_path
                     if len(info.md5) == 4:
                         hashed_ab_path = STORAGE_DIR / "assetbundle" / str(crc)
                         self.downloaded[path] = hashed_ab_path
@@ -195,7 +194,9 @@ class Client:
 
                     return hashed_ab_path.as_posix()
 
-                task: asyncio.Task[str] = asyncio.create_task(_download_and_write())
+                task: asyncio.Task[str] = asyncio.create_task(
+                    _download_and_write(hashed_ab_path)
+                )
 
                 def cleanup(t: asyncio.Task[str]) -> None:
                     existing = self._resolve_tasks.get(path)
