@@ -24,6 +24,8 @@ HEADERS = {
 WIKI_API_ENDPOINT = URL("https://prts.wiki/api.php")
 HG_CN_BASEURL = URL("https://ak.hycdn.cn/assetbundle/official/Android/assets/")
 
+PRE_RESOLVE_PATHS = ["anon/", "refs/"]
+
 PROFESSIONS = {
     "PIONEER": "先锋",
     "WARRIOR": "近卫",

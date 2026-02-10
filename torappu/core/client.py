@@ -7,6 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 
+import anyio
 import httpx
 import UnityPy
 from tenacity import retry, wait_random_exponential
@@ -18,6 +19,7 @@ from torappu.consts import (
     HEADERS,
     HG_CN_BASEURL,
     HOT_UPDATE_LIST_DIR,
+    PRE_RESOLVE_PATHS,
     STORAGE_DIR,
 )
 from torappu.log import logger
@@ -27,14 +29,6 @@ from .utils import run_async, run_sync
 
 
 class Client:
-    config: Config
-
-    version: Version
-    hot_update_list: HotUpdateInfo
-
-    prev_version: Version | None
-    prev_hot_update_list: HotUpdateInfo | None
-
     def __init__(
         self, version: Version, prev_version: Version | None, config: Config
     ) -> None:
@@ -44,6 +38,7 @@ class Client:
         self.http_client = httpx.AsyncClient(timeout=config.timeout)
         self.asset_to_bundle: dict[str, str] = {}
         self.downloaded: dict[str, Path] = {}
+        self.anon_paths: set[str] = set()
 
     async def init(self):
         self.hot_update_list = await self.load_hot_update_list(self.version.res_version)
@@ -63,6 +58,16 @@ class Client:
             )
         else:
             await self.load_torappu_index()
+
+        await self.init_anon()
+
+    async def init_anon(self):
+        async def resolve_anon_path(path: str):
+            self.anon_paths.update(await self.resolve_by_prefix(path))
+
+        async with anyio.create_task_group() as tg:
+            for path in PRE_RESOLVE_PATHS:
+                tg.start_soon(resolve_anon_path, path)
 
     def diff(self) -> list[Diff]:
         result = []
