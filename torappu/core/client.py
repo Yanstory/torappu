@@ -25,8 +25,6 @@ from torappu.consts import (
 from torappu.log import logger
 from torappu.models import ABInfo, Diff, HotUpdateInfo, Version
 
-from .utils import run_async, run_sync
-
 
 class Client:
     def __init__(
@@ -145,17 +143,16 @@ class Client:
 
         return (resp.content, int(resp.headers["x-oss-hash-crc64ecma"]))
 
-    @run_sync
-    def resolve(self, path: str) -> str:
+    async def resolve(self, path: str) -> str:
         info = self.get_abinfo_by_path(path)
 
-        result = STORAGE_DIR / "assetbundle" / info.md5
+        hashed_ab_path = STORAGE_DIR / "assetbundle" / info.md5
         if (
             len(info.md5) != 4
-            and result.exists()
-            and info.md5 == md5(result.read_bytes()).hexdigest()
+            and hashed_ab_path.exists()
+            and info.md5 == md5(hashed_ab_path.read_bytes()).hexdigest()
         ):
-            return result.as_posix()
+            return hashed_ab_path.as_posix()
         if (
             len(info.md5) == 4
             and path in self.downloaded
@@ -163,22 +160,21 @@ class Client:
         ):
             return str(self.downloaded[path].resolve())
 
-        result.parent.mkdir(parents=True, exist_ok=True)
+        hashed_ab_path.parent.mkdir(parents=True, exist_ok=True)
         # 从 2.4.01 24-10-30-15-08-36-72419d 开始引入了anon/*
         # hot update list里面的md5只有四位，改用oss给的crc当文件名
-        (content, crc) = run_async(self.download_ab)(path)
+        (content, crc) = await self.download_ab(path)
         if len(info.md5) == 4:
-            result = STORAGE_DIR / "assetbundle" / str(crc)
-            self.downloaded[path] = result
+            hashed_ab_path = STORAGE_DIR / "assetbundle" / str(crc)
+            self.downloaded[path] = hashed_ab_path
         with ZipFile(BytesIO(content)) as myzip:
-            result.write_bytes(myzip.read(myzip.filelist[0]))
+            hashed_ab_path.write_bytes(myzip.read(myzip.filelist[0]))
 
-        return result.as_posix()
+        return hashed_ab_path.as_posix()
 
     # .ab的路径
-    @run_sync
-    def resolve_ab(self, path: str) -> str:
-        return run_async(self.resolve)(path + ".ab")
+    async def resolve_ab(self, path: str) -> str:
+        return await self.resolve(path + ".ab")
 
     async def resolves(self, path: list[str]) -> list[tuple[str, str]]:
         result = await asyncio.gather(*(self.resolve(p) for p in path))
