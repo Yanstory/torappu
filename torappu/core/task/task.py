@@ -40,10 +40,6 @@ class Task(abc.ABC):
         json_path = GAMEDATA_DIR.joinpath(self.client.version.res_version, path)
         return json.loads(json_path.read_text("utf-8"))
 
-    async def load_anon(self, env: Environment):
-        paths = [
-            *await self.client.resolve_by_prefix("anon/"),
-            *await self.client.resolve_by_prefix("refs/"),
-        ]
-        for path in paths:
+    def load_anon(self, env: Environment):
+        for path in self.client.anon_paths:
             env.load_file(path, is_dependency=True)
