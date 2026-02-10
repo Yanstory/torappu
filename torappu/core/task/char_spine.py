@@ -58,7 +58,7 @@ class CharSpine(Task):
 
     def update_config(self, name: str, skin: str, side: str, filename: str):
         if name not in self.char_map:
-            logger.error(f"{name} not found in gamedata, skipped")
+            logger.warning(f"{name} not found in gamedata, skipped")
             return
         self.changed_char.setdefault(
             name,
