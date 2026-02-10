@@ -37,6 +37,9 @@ class Client:
         self.asset_to_bundle: dict[str, str] = {}
         self.downloaded: dict[str, Path] = {}
         self.anon_paths: set[str] = set()
+        # de-duplicate ab download requests
+        self._resolve_lock = asyncio.Lock()
+        self._resolve_tasks: dict[str, asyncio.Task[str]] = {}
 
     async def init(self):
         self.hot_update_list = await self.load_hot_update_list(self.version.res_version)
@@ -143,10 +146,9 @@ class Client:
 
         return (resp.content, int(resp.headers["x-oss-hash-crc64ecma"]))
 
-    async def resolve(self, path: str) -> str:
-        info = self.get_abinfo_by_path(path)
-
-        hashed_ab_path = STORAGE_DIR / "assetbundle" / info.md5
+    def _check_cached_ab_path(
+        self, path: str, info: ABInfo, hashed_ab_path: Path
+    ) -> str | None:
         if (
             len(info.md5) != 4
             and hashed_ab_path.exists()
@@ -160,17 +162,51 @@ class Client:
         ):
             return str(self.downloaded[path].resolve())
 
-        hashed_ab_path.parent.mkdir(parents=True, exist_ok=True)
-        # 从 2.4.01 24-10-30-15-08-36-72419d 开始引入了anon/*
-        # hot update list里面的md5只有四位，改用oss给的crc当文件名
-        (content, crc) = await self.download_ab(path)
-        if len(info.md5) == 4:
-            hashed_ab_path = STORAGE_DIR / "assetbundle" / str(crc)
-            self.downloaded[path] = hashed_ab_path
-        with ZipFile(BytesIO(content)) as myzip:
-            hashed_ab_path.write_bytes(myzip.read(myzip.filelist[0]))
+        return None
 
-        return hashed_ab_path.as_posix()
+    async def resolve(self, path: str) -> str:
+        info = self.get_abinfo_by_path(path)
+
+        hashed_ab_path = STORAGE_DIR / "assetbundle" / info.md5
+        cached = self._check_cached_ab_path(path, info, hashed_ab_path)
+        if cached is not None:
+            return cached
+
+        async with self._resolve_lock:
+            cached = self._check_cached_ab_path(path, info, hashed_ab_path)
+            if cached is not None:
+                return cached
+
+            if path in self._resolve_tasks:
+                task = self._resolve_tasks[path]
+            else:
+
+                async def _download_and_write() -> str:
+                    # 从 2.4.01 24-10-30-15-08-36-72419d 开始引入了anon/*
+                    # hot update list里面的md5只有四位，改用oss给的crc当文件名
+                    hashed_ab_path.parent.mkdir(parents=True, exist_ok=True)
+                    (content, crc) = await self.download_ab(path)
+                    nonlocal hashed_ab_path
+                    if len(info.md5) == 4:
+                        hashed_ab_path = STORAGE_DIR / "assetbundle" / str(crc)
+                        self.downloaded[path] = hashed_ab_path
+                    with ZipFile(BytesIO(content)) as myzip:
+                        hashed_ab_path.write_bytes(myzip.read(myzip.filelist[0]))
+
+                    return hashed_ab_path.as_posix()
+
+                task: asyncio.Task[str] = asyncio.create_task(_download_and_write())
+
+                def cleanup(t: asyncio.Task[str]) -> None:
+                    existing = self._resolve_tasks.get(path)
+                    if existing is t:
+                        self._resolve_tasks.pop(path, None)
+
+                task.add_done_callback(cleanup)
+                self._resolve_tasks[path] = task
+
+        # 在锁外等待下载完成，避免阻塞其它 resolve
+        return await task
 
     # .ab的路径
     async def resolve_ab(self, path: str) -> str:
