@@ -8,7 +8,7 @@ from torappu.consts import STORAGE_DIR
 from torappu.core.task.utils import read_obj
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 
 BASE_DIR = STORAGE_DIR.joinpath("asset", "raw", "profession_large_icon")
 

@@ -20,7 +20,7 @@ from torappu.core.task.utils import m_script_to_bytes
 from torappu.core.utils import run_sync
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 
 flatbuffer_list = [
     # excel

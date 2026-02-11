@@ -26,8 +26,8 @@ from .roguelike_topic_itempic import RoguelikeTopicItempic as RoguelikeTopicItem
 from .skill import Skill as Skill
 from .specialized_icon import SpecializedIcon as SpecializedIcon
 from .subprofession_icon import SubProfessionIcon as SubProfessionIcon
-from .task import Task as Task
-from .task import registry as registry
+from .base import Task as Task
+from .base import registry as registry
 from .uniequip_direction import UniEquipDirection as UniEquipDirection
 from .uniequip_extratype import UniEquipExtraType as UniEquipExtraType
 from .uniequip_img import UniEquipImage as UniEquipImage

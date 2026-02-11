@@ -8,7 +8,7 @@ from torappu.consts import STORAGE_DIR
 from torappu.core.utils import run_sync
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 from .utils import get_source, get_tex_env_by_key, merge_alpha, read_obj
 
 if TYPE_CHECKING:

@@ -13,7 +13,7 @@ from torappu.core.utils import run_sync
 from torappu.log import logger
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 from .utils import (
     build_container_path,
     get_source,

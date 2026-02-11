@@ -10,7 +10,7 @@ from torappu.core.task.utils import read_obj
 from torappu.core.utils import run_sync
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 
 BASE_DIR = STORAGE_DIR.joinpath("asset", "raw", "map_preview")
 

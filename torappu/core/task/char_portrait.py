@@ -8,7 +8,7 @@ from torappu.consts import STORAGE_DIR
 from torappu.core.utils import run_sync
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 from .utils import get_source, read_obj
 
 BASE_PATH = STORAGE_DIR.joinpath("asset", "raw", "char_portrait")

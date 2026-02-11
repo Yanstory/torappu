@@ -12,7 +12,7 @@ from torappu.core.client import Client
 from torappu.log import logger
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 from .utils import (
     build_container_path,
     read_obj,

@@ -6,7 +6,7 @@ from torappu.consts import BASE_DIR
 from torappu.log import logger
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 from .utils import trans_prof
 
 

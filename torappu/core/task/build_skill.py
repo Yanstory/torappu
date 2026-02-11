@@ -8,7 +8,7 @@ from torappu.core.client import Client
 from torappu.core.task.audio import read_obj
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 
 BASE_PATH = STORAGE_DIR.joinpath("asset", "raw", "build_skill_icon")
 

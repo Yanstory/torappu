@@ -9,7 +9,7 @@ from torappu.core.client import Client
 from torappu.core.task.utils import read_obj
 from torappu.models import Diff
 
-from .task import Task
+from .base import Task
 
 BASE_DIR = STORAGE_DIR.joinpath("asset", "raw", "uniequip_direction")
 

@@ -13,7 +13,7 @@ from torappu.core.utils import run_sync
 from torappu.models import Diff
 
 from .medal_icon import BASE_DIR as MEDAL_ICON_DIR
-from .task import Task
+from .base import Task
 
 BASE_DIR = STORAGE_DIR.joinpath("asset", "raw", "medal_diy")
 BKG_DIR = BASE_DIR / "bkg"
