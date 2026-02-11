@@ -97,14 +97,12 @@ class Task(BaseTask):
                         break
 
     async def unpack(self, ab_path: str):
-        real_path = await self.client.fetch_asset_bundle(ab_path)
+        real_path = await self.client.fetch_bundle(ab_path)
         await self.unpack_ab(
             UnityPy.load(*self.client.anon_paths, real_path), Path(real_path).name
         )
 
     async def start(self):
-        await asyncio.gather(
-            *(self.client.fetch_asset_bundle(ab) for ab in self.ab_list)
-        )
+        await asyncio.gather(*(self.client.fetch_bundle(ab) for ab in self.ab_list))
         await asyncio.gather(*(self.unpack(ab) for ab in self.ab_list))
         await asyncio.gather(*(self.unpack(ab) for ab in self.ab_list))

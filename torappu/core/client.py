@@ -39,8 +39,8 @@ class Client:
         self.downloaded: dict[str, Path] = {}
         self.anon_paths: set[str] = set()
         # de-duplicate ab download requests
-        self._resolve_lock = asyncio.Lock()
-        self._resolve_tasks: dict[str, asyncio.Task[str]] = {}
+        self._download_lock = asyncio.Lock()
+        self._downloading_tasks: dict[str, asyncio.Task[str]] = {}
 
     async def init(self):
         self.hot_update_list = await self.load_hot_update_list(self.version.res_version)
@@ -51,7 +51,7 @@ class Client:
         else:
             self.prev_hot_update_list = None
         if self.hot_update_list.manifest_name is not None:
-            idx_path = await self.fetch_asset_bundle(self.hot_update_list.manifest_name)
+            idx_path = await self.fetch_bundle(self.hot_update_list.manifest_name)
             self.load_idx(
                 idx_path,
                 GAMEDATA_DIR.joinpath(
@@ -161,7 +161,7 @@ class Client:
 
         return None
 
-    async def fetch_asset_bundle(self, path: str) -> str:
+    async def fetch_bundle(self, path: str) -> str:
         info = self.get_abinfo_by_path(path)
 
         hashed_ab_path = STORAGE_DIR / "assetbundle" / info.md5
@@ -169,13 +169,13 @@ class Client:
         if cached is not None:
             return cached
 
-        async with self._resolve_lock:
+        async with self._download_lock:
             cached = self._check_cached_ab_path(path, info, hashed_ab_path)
             if cached is not None:
                 return cached
 
-            if path in self._resolve_tasks:
-                task = self._resolve_tasks[path]
+            if path in self._downloading_tasks:
+                task = self._downloading_tasks[path]
             else:
 
                 async def _download_and_write(hashed_ab_path: Path) -> str:
@@ -196,18 +196,18 @@ class Client:
                 )
 
                 def cleanup(t: asyncio.Task[str]) -> None:
-                    existing = self._resolve_tasks.get(path)
+                    existing = self._downloading_tasks.get(path)
                     if existing is t:
-                        self._resolve_tasks.pop(path, None)
+                        self._downloading_tasks.pop(path, None)
 
                 task.add_done_callback(cleanup)
-                self._resolve_tasks[path] = task
+                self._downloading_tasks[path] = task
 
         # 在锁外等待下载完成，避免阻塞其它 resolve
         return await task
 
     async def fetch_asset_bundles(self, path: list[str]) -> list[tuple[str, str]]:
-        result = await asyncio.gather(*(self.fetch_asset_bundle(p) for p in path))
+        result = await asyncio.gather(*(self.fetch_bundle(p) for p in path))
         return list(zip(path, result))
 
     async def fetch_asset_bundles_by_prefix(self, prefix: str) -> list[str]:
@@ -220,10 +220,10 @@ class Client:
         if len(paths) == 0:
             return []
 
-        return await asyncio.gather(*(self.fetch_asset_bundle(p) for p in paths))
+        return await asyncio.gather(*(self.fetch_bundle(p) for p in paths))
 
     async def fetch_asset_bundle_with_suffix(self, path: str) -> str:
-        return await self.fetch_asset_bundle(path + ".ab")
+        return await self.fetch_bundle(path + ".ab")
 
     # [["abpath", "real_path"]]
     async def fetch_asset_bundles_with_suffix(
