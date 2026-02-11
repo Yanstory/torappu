@@ -30,6 +30,7 @@ SKIP_BG_TYPES = ["UNI_COLLECTION"]
 
 class Task(BaseTask):
     priority: ClassVar[int] = 2
+    name = "ItemIcon"
 
     def __init__(self, client: Client) -> None:
         super().__init__(client)

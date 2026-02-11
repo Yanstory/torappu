@@ -98,6 +98,7 @@ chat_mask = "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
 
 class Task(BaseTask):
     priority: ClassVar[int] = 0
+    name = "GameData"
 
     def __init__(self, client: Client) -> None:
         super().__init__(client)

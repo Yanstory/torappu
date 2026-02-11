@@ -15,6 +15,7 @@ BASE_PATH = STORAGE_DIR.joinpath("asset", "raw", "build_skill_icon")
 
 class Task(BaseTask):
     priority: ClassVar[int] = 1
+    name = "BuildSkill"
 
     def __init__(self, client: Client) -> None:
         super().__init__(client)

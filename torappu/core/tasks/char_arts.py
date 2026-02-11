@@ -19,6 +19,7 @@ BASE_DIR = STORAGE_DIR.joinpath("asset", "raw", "char_arts")
 
 class Task(BaseTask):
     priority: ClassVar[int] = 3
+    name = "CharArts"
 
     @run_sync
     def unpack(self, env: UnityPy.Environment, unpacking_source: list[str]):

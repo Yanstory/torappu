@@ -17,6 +17,7 @@ ATLAS_DEST = BASE_PATH / "atlas"
 
 class Task(BaseTask):
     priority: ClassVar[int] = 3
+    name = "CharPortrait"
 
     @run_sync
     def unpack(self, env: UnityPy.Environment, unpacking_source: list[str]):

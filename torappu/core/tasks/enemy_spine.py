@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 class Task(BaseTask):
     priority: ClassVar[int] = 2
+    name = "EnemySpine"
 
     def __init__(self, client: Client) -> None:
         super().__init__(client)

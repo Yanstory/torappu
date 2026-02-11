@@ -15,6 +15,7 @@ BASE_DIR = STORAGE_DIR.joinpath("asset", "raw", "enemy_icon")
 
 class Task(BaseTask):
     priority: ClassVar[int] = 2
+    name = "EnemyIcon"
 
     async def unpack(self, ab_path: str):
         env = UnityPy.load(ab_path)

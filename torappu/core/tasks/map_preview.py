@@ -45,6 +45,7 @@ def unpack_big(ab_path: str):
 
 class Task(BaseTask):
     priority: ClassVar[int] = 4
+    name = "MapPreview"
 
     def __init__(self, client: Client) -> None:
         super().__init__(client)

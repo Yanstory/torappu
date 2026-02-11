@@ -39,6 +39,7 @@ class SpineConfig(BaseModel):
 
 class Task(BaseTask):
     priority: ClassVar[int] = 2
+    name = "CharSpine"
 
     def __init__(self, client: Client) -> None:
         super().__init__(client)

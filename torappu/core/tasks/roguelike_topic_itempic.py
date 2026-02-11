@@ -15,6 +15,7 @@ BASE_DIR = STORAGE_DIR.joinpath("asset", "raw", "roguelike_topic_itempic")
 
 class Task(BaseTask):
     priority: ClassVar[int] = 2
+    name = "RoguelikeTopicItempic"
 
     async def unpack(self, ab_path: str):
         env = UnityPy.load(ab_path)

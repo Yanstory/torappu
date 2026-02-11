@@ -34,6 +34,7 @@ class MedalPosition:
 
 class Task(BaseTask):
     priority: ClassVar[int] = 5
+    name = "MedalDIY"
 
     def __init__(self, client: Client) -> None:
         super().__init__(client)

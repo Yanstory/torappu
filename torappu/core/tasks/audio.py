@@ -26,6 +26,7 @@ AUDIO_DIR = STORAGE_DIR / "asset" / "raw" / "audio"
 
 class Task(BaseTask):
     priority: ClassVar[int] = 3
+    name = "Audio"
 
     def __init__(self, client: Client) -> None:
         super().__init__(client)

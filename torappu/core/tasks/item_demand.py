@@ -27,6 +27,7 @@ def ensure_item_exists(item_demand, item_name, char_id, char_detail, skill_num):
 
 class Task(BaseTask):
     priority: ClassVar[int] = 1
+    name = "ItemDemand"
 
     def check(self, diff_list: list[Diff]) -> bool:
         return True

@@ -15,6 +15,7 @@ BASE_PATH = STORAGE_DIR.joinpath("asset", "raw", "furniture")
 
 class Task(BaseTask):
     priority: ClassVar[int] = 1
+    name = "FurnitureIcon"
 
     def __init__(self, client: Client) -> None:
         super().__init__(client)
