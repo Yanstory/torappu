@@ -15,7 +15,6 @@ Torappu is an asset unpacker for Arknights focused on resource extraction and an
 
 - `torappu/core/tasks/` - Task implementations (each module exposes a `Task` class)
 - `torappu/core/utils/` - Shared helpers for Unity asset parsing and IO
-- `torappu/core/wiki/` - Wiki integration helpers
 - `OpenArknightsFBS/` - FlatBuffer schema definitions
 - `assets/` - Static assets used by tasks
 - `bin/` - Bundled tools like `flatc` (platform-specific)
