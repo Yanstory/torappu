@@ -45,6 +45,5 @@ class CharPortrait(Task):
         BASE_PATH.mkdir(parents=True, exist_ok=True)
         ATLAS_DEST.mkdir(parents=True, exist_ok=True)
 
-        env = UnityPy.load(*[path[1] for path in paths])
-        self.load_anon(env)
+        env = UnityPy.load(*self.client.anon_paths, *[path[1] for path in paths])
         await self.unpack(env)

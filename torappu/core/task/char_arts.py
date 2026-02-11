@@ -71,6 +71,5 @@ class CharArts(Task):
         # for _, ab_path in paths:
         #     await self.unpack(ab_path)
 
-        env = UnityPy.load(*[path[1] for path in paths])
-        self.load_anon(env)
+        env = UnityPy.load(*self.client.anon_paths, *[path[1] for path in paths])
         await self.unpack(env)
