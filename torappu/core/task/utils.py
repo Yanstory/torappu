@@ -109,6 +109,12 @@ def get_tex_env_by_key(
     raise KeyError(f"Key {key} not found in tex env")
 
 
+def get_source(obj) -> str | None:
+    sf = obj.assets_file
+    name = getattr(sf.parent, "name", None)
+    return name
+
+
 def get_name(src: FastPropertyName | str) -> str:
     """Get name from FastPropertyName or str"""
     if isinstance(src, FastPropertyName):

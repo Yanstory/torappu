@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import ClassVar, cast
 
 import UnityPy
@@ -8,7 +9,7 @@ from torappu.core.utils import run_sync
 from torappu.models import Diff
 
 from .task import Task
-from .utils import read_obj
+from .utils import get_source, read_obj
 
 BASE_PATH = STORAGE_DIR.joinpath("asset", "raw", "char_portrait")
 ATLAS_DEST = BASE_PATH / "atlas"
@@ -18,8 +19,12 @@ class CharPortrait(Task):
     priority: ClassVar[int] = 3
 
     @run_sync
-    def unpack(self, env: UnityPy.Environment):
+    def unpack(self, env: UnityPy.Environment, resolved_paths: list[str]):
         for obj in filter(lambda obj: obj.type.name == "Sprite", env.objects):
+            source = get_source(obj)
+            if source not in resolved_paths:
+                continue
+
             if (sprite := read_obj(Sprite, obj)) is None:
                 continue
 
@@ -42,8 +47,12 @@ class CharPortrait(Task):
 
     async def start(self):
         paths = await self.client.resolves(list(self.ab_list))
+        resolved_paths = [path[1] for path in paths]
+        resolved_filenames: list[str] = [
+            Path(resolved_path).name for resolved_path in resolved_paths
+        ]
         BASE_PATH.mkdir(parents=True, exist_ok=True)
         ATLAS_DEST.mkdir(parents=True, exist_ok=True)
 
-        env = UnityPy.load(*self.client.anon_paths, *[path[1] for path in paths])
-        await self.unpack(env)
+        env = UnityPy.load(*self.client.anon_paths, *resolved_paths)
+        await self.unpack(env, resolved_filenames)

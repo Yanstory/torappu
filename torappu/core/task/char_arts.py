@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, cast
 
 import UnityPy
@@ -8,7 +9,7 @@ from torappu.core.utils import run_sync
 from torappu.models import Diff
 
 from .task import Task
-from .utils import get_tex_env_by_key, merge_alpha, read_obj
+from .utils import get_source, get_tex_env_by_key, merge_alpha, read_obj
 
 if TYPE_CHECKING:
     from UnityPy.classes import Material, PPtr, Texture2D
@@ -20,10 +21,15 @@ class CharArts(Task):
     priority: ClassVar[int] = 3
 
     @run_sync
-    def unpack(self, env: UnityPy.Environment):
+    def unpack(self, env: UnityPy.Environment, resolved_paths: list[str]):
         for obj in filter(lambda obj: obj.type.name == "MonoBehaviour", env.objects):
+            source = get_source(obj)
+            if source not in resolved_paths:
+                continue
+
             if (behaviour := read_obj(MonoBehaviour, obj)) is None:
                 continue
+
             script = behaviour.m_Script.read()
             if script.m_Name != "Image":
                 continue
@@ -67,9 +73,13 @@ class CharArts(Task):
 
     async def start(self):
         paths = await self.client.resolves(list(self.ab_list))
+        resolved_paths = [path[1] for path in paths]
+        resolved_filenames: list[str] = [
+            Path(resolved_path).name for resolved_path in resolved_paths
+        ]
         BASE_DIR.mkdir(parents=True, exist_ok=True)
         # for _, ab_path in paths:
         #     await self.unpack(ab_path)
 
-        env = UnityPy.load(*self.client.anon_paths, *[path[1] for path in paths])
-        await self.unpack(env)
+        env = UnityPy.load(*self.client.anon_paths, *resolved_paths)
+        await self.unpack(env, resolved_filenames)
