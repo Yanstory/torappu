@@ -46,7 +46,9 @@ async def check_and_run_task(instance: BaseTask, diff: list[Diff]):
         return
 
     try:
-        await instance.run()
+        logger.info(f"Starting task {instance.name}")
+        await instance.start()
+        logger.info(f"Finished task {instance.name}")
     except Exception as e:
         logger.opt(exception=e).error(f"Running {type(instance).__name__} failed.")
 

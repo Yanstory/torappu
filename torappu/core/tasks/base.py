@@ -20,11 +20,6 @@ class BaseTask(abc.ABC):
     def check(self, diff_list: list[Diff]) -> bool:
         raise NotImplementedError
 
-    async def run(self):
-        logger.info(f"Starting task {type(self).__name__}")
-        await self.start()
-        logger.info(f"Finished task {type(self).__name__}")
-
     @abc.abstractmethod
     async def start(self):
         raise NotImplementedError
