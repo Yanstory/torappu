@@ -271,4 +271,3 @@ class Task(BaseTask):
                 result.skin = {**spine.skin, **result.skin}
 
             meta_path.write_text(result.model_dump_json(), encoding="utf-8")
-            meta_path.write_text(result.model_dump_json(), encoding="utf-8")

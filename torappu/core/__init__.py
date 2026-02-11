@@ -86,7 +86,7 @@ async def main(
 
         async with anyio.create_task_group() as tg:
             for task in registry[priority]:
-                input_name = task.__name__
+                input_name = task.name
                 if (exclude and input_name in exclude) or (
                     include and input_name not in include
                 ):
