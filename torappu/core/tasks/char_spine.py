@@ -1,4 +1,3 @@
-import asyncio
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, cast
@@ -128,11 +127,12 @@ class Task(BaseTask):
         )
 
     @run_sync
-    def unpack_ab(self, env: UnityPy.Environment, unpacking_source: str):
+    def unpack(self, env: UnityPy.Environment, unpacking_source: list[str]):
         container_map = build_container_path(env)
 
         for obj in filter(lambda obj: obj.type.name == "GameObject", env.objects):
-            if get_source(obj) != unpacking_source:
+            source = get_source(obj)
+            if source not in unpacking_source:
                 continue
 
             if (game_obj := read_obj(GameObject, obj)) is None:
@@ -221,12 +221,6 @@ class Task(BaseTask):
                         self.update_config(name, skin, side, skel_name)
                     break
 
-    async def unpack(self, ab_path: str):
-        real_path = await self.client.fetch_bundle(ab_path)
-        await self.unpack_ab(
-            UnityPy.load(*self.client.anon_paths, real_path), Path(real_path).name
-        )
-
     async def start(self):
         char_table = get_gamedata(
             self.client.version.res_version, "excel/character_table.json"
@@ -259,8 +253,13 @@ class Task(BaseTask):
                     "displaySkin"
                 ]["skinName"]
 
-        await asyncio.gather(*(self.client.fetch_bundle(ab) for ab in self.ab_list))
-        await asyncio.gather(*(self.unpack(ab) for ab in self.ab_list))
+        paths = await self.client.fetch_asset_bundles(list(self.ab_list))
+        resolved_paths = [path[1] for path in paths]
+        resolved_filenames: list[str] = [
+            Path(resolved_path).name for resolved_path in resolved_paths
+        ]
+        env = UnityPy.load(*self.client.anon_paths, *resolved_paths)
+        await self.unpack(env, resolved_filenames)
 
         for char in filter(lambda c: c in self.char_map, self.changed_char):
             meta_path = STORAGE_DIR.joinpath(

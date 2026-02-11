@@ -58,7 +58,7 @@ class Task(BaseTask):
         paths = await self.client.fetch_asset_bundles(list(self.ab_list))
         BASE_DIR.mkdir(parents=True, exist_ok=True)
 
-        hub_ab_path = await self.client.fetch_bundle(
+        hub_ab_path = await self.client.fetch_asset_bundle(
             self.client.asset_to_bundle["arts/ui/uniequipdirection/pic_hub"]
         )
         await self.unpack_hub(hub_ab_path)

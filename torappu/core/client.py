@@ -51,7 +51,7 @@ class Client:
         else:
             self.prev_hot_update_list = None
         if self.hot_update_list.manifest_name is not None:
-            idx_path = await self.fetch_bundle(self.hot_update_list.manifest_name)
+            idx_path = await self.fetch_asset_bundle(self.hot_update_list.manifest_name)
             self.load_idx(
                 idx_path,
                 GAMEDATA_DIR.joinpath(
@@ -161,7 +161,7 @@ class Client:
 
         return None
 
-    async def fetch_bundle(self, path: str) -> str:
+    async def fetch_asset_bundle(self, path: str) -> str:
         info = self.get_abinfo_by_path(path)
 
         hashed_ab_path = STORAGE_DIR / "assetbundle" / info.md5
@@ -207,7 +207,7 @@ class Client:
         return await task
 
     async def fetch_asset_bundles(self, path: list[str]) -> list[tuple[str, str]]:
-        result = await asyncio.gather(*(self.fetch_bundle(p) for p in path))
+        result = await asyncio.gather(*(self.fetch_asset_bundle(p) for p in path))
         return list(zip(path, result))
 
     async def fetch_asset_bundles_by_prefix(self, prefix: str) -> list[str]:
@@ -220,10 +220,10 @@ class Client:
         if len(paths) == 0:
             return []
 
-        return await asyncio.gather(*(self.fetch_bundle(p) for p in paths))
+        return await asyncio.gather(*(self.fetch_asset_bundle(p) for p in paths))
 
     async def fetch_asset_bundle_with_suffix(self, path: str) -> str:
-        return await self.fetch_bundle(path + ".ab")
+        return await self.fetch_asset_bundle(path + ".ab")
 
     # [["abpath", "real_path"]]
     async def fetch_asset_bundles_with_suffix(
