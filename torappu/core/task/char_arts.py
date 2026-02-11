@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, ClassVar, cast
 
-import anyio
 import UnityPy
 from UnityPy.classes import MonoBehaviour, Sprite
 
 from torappu.consts import STORAGE_DIR
+from torappu.core.utils import run_sync
 from torappu.models import Diff
 
 from .task import Task
@@ -19,10 +19,8 @@ BASE_DIR = STORAGE_DIR.joinpath("asset", "raw", "char_arts")
 class CharArts(Task):
     priority: ClassVar[int] = 3
 
-    async def unpack(self, ab_path: str):
-        env = UnityPy.load(ab_path)
-        self.load_anon(env)
-
+    @run_sync
+    def unpack(self, env: UnityPy.Environment):
         for obj in filter(lambda obj: obj.type.name == "MonoBehaviour", env.objects):
             if (behaviour := read_obj(MonoBehaviour, obj)) is None:
                 continue
@@ -73,6 +71,6 @@ class CharArts(Task):
         # for _, ab_path in paths:
         #     await self.unpack(ab_path)
 
-        async with anyio.create_task_group() as tg:
-            for _, ab_path in paths:
-                tg.start_soon(self.unpack, ab_path)
+        env = UnityPy.load(*[path[1] for path in paths])
+        self.load_anon(env)
+        await self.unpack(env)

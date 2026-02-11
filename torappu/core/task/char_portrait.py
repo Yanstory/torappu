@@ -1,10 +1,10 @@
 from typing import ClassVar, cast
 
-import anyio
 import UnityPy
 from UnityPy.classes import Sprite, Texture2D
 
 from torappu.consts import STORAGE_DIR
+from torappu.core.utils import run_sync
 from torappu.models import Diff
 
 from .task import Task
@@ -17,10 +17,8 @@ ATLAS_DEST = BASE_PATH / "atlas"
 class CharPortrait(Task):
     priority: ClassVar[int] = 3
 
-    async def unpack(self, ab_path: str):
-        env = UnityPy.load(ab_path)
-        self.load_anon(env)
-
+    @run_sync
+    def unpack(self, env: UnityPy.Environment):
         for obj in filter(lambda obj: obj.type.name == "Sprite", env.objects):
             if (sprite := read_obj(Sprite, obj)) is None:
                 continue
@@ -32,15 +30,6 @@ class CharPortrait(Task):
 
             sprite.image.save(BASE_PATH / f"{sprite.m_Name}.png")
 
-    async def start(self):
-        paths = await self.client.resolves(list(self.ab_list))
-        BASE_PATH.mkdir(parents=True, exist_ok=True)
-        ATLAS_DEST.mkdir(parents=True, exist_ok=True)
-
-        async with anyio.create_task_group() as tg:
-            for _, ab_path in paths:
-                tg.start_soon(self.unpack, ab_path)
-
     def check(self, diff_list: list[Diff]) -> bool:
         diff_set = {diff.path for diff in diff_list}
         self.ab_list = {
@@ -50,3 +39,12 @@ class CharPortrait(Task):
         }
 
         return len(self.ab_list) > 0
+
+    async def start(self):
+        paths = await self.client.resolves(list(self.ab_list))
+        BASE_PATH.mkdir(parents=True, exist_ok=True)
+        ATLAS_DEST.mkdir(parents=True, exist_ok=True)
+
+        env = UnityPy.load(*[path[1] for path in paths])
+        self.load_anon(env)
+        await self.unpack(env)

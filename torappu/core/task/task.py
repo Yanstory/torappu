@@ -41,5 +41,4 @@ class Task(abc.ABC):
         return json.loads(json_path.read_text("utf-8"))
 
     def load_anon(self, env: Environment):
-        for path in self.client.anon_paths:
-            env.load_file(path, is_dependency=True)
+        env.load_files(list(self.client.anon_paths))
