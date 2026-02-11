@@ -9,7 +9,7 @@ from UnityPy.classes import MonoBehaviour, Sprite
 from torappu.consts import STORAGE_DIR
 from torappu.core.client import Client
 from torappu.core.tasks.utils import get_gamedata, get_source, read_obj
-from torappu.core.utils import run_sync
+from torappu.core.utils.thread import run_sync
 from torappu.models import Diff
 
 from .base import BaseTask

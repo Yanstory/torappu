@@ -17,7 +17,7 @@ from UnityPy.classes import TextAsset
 from torappu.consts import FBS_DIR, STORAGE_DIR
 from torappu.core.client import Client
 from torappu.core.tasks.utils import m_script_to_bytes
-from torappu.core.utils import run_sync
+from torappu.core.utils.thread import run_sync
 from torappu.models import Diff
 
 from .base import BaseTask

@@ -22,6 +22,7 @@ from torappu.consts import (
     PRE_RESOLVE_PATHS,
     STORAGE_DIR,
 )
+from torappu.core.utils.path import hg_normalize_url
 from torappu.log import logger
 from torappu.models import ABInfo, Diff, HotUpdateInfo, Version
 
@@ -131,13 +132,9 @@ class Client:
             filter(lambda info: info.name == path, self.hot_update_list.ab_infos)
         )
 
-    @staticmethod
-    def hg_normalize_url(path: str) -> str:
-        return path.replace("\\", "/").replace("/", "_").replace("#", "__")
-
     @retry(wait=wait_random_exponential(multiplier=1, max=60))
     async def download_ab(self, path: str) -> tuple[bytes, int]:
-        filename = f"{self.hg_normalize_url(path.rsplit('.')[0])}.dat"
+        filename = f"{hg_normalize_url(path.rsplit('.')[0])}.dat"
 
         resp = await self.http_client.get(
             HG_CN_BASEURL.join(f"{self.version.res_version}/{filename}")

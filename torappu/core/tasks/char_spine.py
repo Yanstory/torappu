@@ -9,7 +9,7 @@ from UnityPy.classes import GameObject
 
 from torappu.consts import STORAGE_DIR
 from torappu.core.client import Client
-from torappu.core.utils import run_sync
+from torappu.core.utils.thread import run_sync
 from torappu.log import logger
 from torappu.models import Diff
 

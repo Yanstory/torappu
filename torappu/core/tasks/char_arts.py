@@ -5,7 +5,7 @@ import UnityPy
 from UnityPy.classes import MonoBehaviour, Sprite
 
 from torappu.consts import STORAGE_DIR
-from torappu.core.utils import run_sync
+from torappu.core.utils.thread import run_sync
 from torappu.models import Diff
 
 from .base import BaseTask
