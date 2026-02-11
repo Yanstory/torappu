@@ -1,10 +1,10 @@
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import ClassVar
 
 import UnityPy
 from pydantic import BaseModel, TypeAdapter
-from UnityPy.classes import GameObject
+from UnityPy.classes import GameObject, Material, MonoBehaviour, PPtr, TextAsset
 
 from torappu.consts import STORAGE_DIR
 from torappu.core.client import Client
@@ -22,9 +22,6 @@ from .utils import (
     read_obj,
 )
 
-if TYPE_CHECKING:
-    from UnityPy.classes import Material, MonoBehaviour, PPtr, TextAsset
-
 
 class FileConfig(BaseModel):
     file: str
@@ -38,7 +35,7 @@ class SpineConfig(BaseModel):
 
 def unpack_asset(data: MonoBehaviour, path: str) -> str:
     base_dir = STORAGE_DIR / "asset" / "raw" / "char_spine" / path
-    skel = cast("TextAsset", data.skeletonJSON.read())  # type: ignore
+    skel: TextAsset = data.skeletonJSON.read()  # type: ignore
     skel_name: str = skel.m_Name.replace("#", "_")
     skel_dest_path = base_dir / skel_name
 
