@@ -3,8 +3,6 @@ import json
 from collections import defaultdict
 from typing import ClassVar
 
-from UnityPy import Environment
-
 from torappu.consts import GAMEDATA_DIR
 from torappu.core.client import Client
 from torappu.log import logger
@@ -39,6 +37,3 @@ class Task(abc.ABC):
     def get_gamedata(self, path: str):
         json_path = GAMEDATA_DIR.joinpath(self.client.version.res_version, path)
         return json.loads(json_path.read_text("utf-8"))
-
-    def load_anon(self, env: Environment):
-        env.load_files(list(self.client.anon_paths))

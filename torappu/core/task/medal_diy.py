@@ -1,14 +1,14 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import ClassVar, cast
 
-import anyio
 import UnityPy
 from PIL import Image
 from UnityPy.classes import MonoBehaviour, Sprite
 
 from torappu.consts import STORAGE_DIR
 from torappu.core.client import Client
-from torappu.core.task.utils import read_obj
+from torappu.core.task.utils import get_source, read_obj
 from torappu.core.utils import run_sync
 from torappu.models import Diff
 
@@ -43,13 +43,15 @@ class MedalDIY(Task):
         self.dict_advanced: dict[str, str] = {}
 
     @run_sync
-    def unpack_metadata(self, ab_path: str):
-        env = UnityPy.load(ab_path)
-        self.load_anon(env)
-
+    def unpack_metadata(self, env: UnityPy.Environment, unpacking_source: list[str]):
         for obj in filter(lambda obj: obj.type.name == "MonoBehaviour", env.objects):
+            source = get_source(obj)
+            if source not in unpacking_source:
+                continue
+
             if (behaviour := read_obj(MonoBehaviour, obj)) is None:
                 continue
+
             script = behaviour.m_Script.deref_parse_as_object()
             if script.m_Name != "UIMedalGroupFrame":
                 continue
@@ -77,11 +79,15 @@ class MedalDIY(Task):
         return result
 
     @run_sync
-    def unpack_ab(self, ab_path: str):
-        env = UnityPy.load(ab_path)
+    def unpack_ab(self, env: UnityPy.Environment, resolved_paths: list[str]):
         for obj in filter(lambda obj: obj.type.name == "Sprite", env.objects):
+            source = get_source(obj)
+            if source not in resolved_paths:
+                continue
+
             if (texture := read_obj(Sprite, obj)) is None:
                 continue
+
             background_image = texture.image
             background_image.save(BKG_DIR / f"{texture.m_Name}.png")
 
@@ -126,33 +132,39 @@ class MedalDIY(Task):
 
         return len(self.ab_list) > 0
 
-    async def get_metadata_paths(self):
-        asset_bundle_paths = list(
-            {
-                bundle
-                for asset, bundle in self.client.asset_to_bundle.items()
-                if asset.startswith("ui/medal/[uc]groupframe")
-            }
-        )
-
-        return await self.client.resolves(asset_bundle_paths)
-
     async def start(self):
-        paths = await self.client.resolves(list(self.ab_list))
         BASE_DIR.mkdir(parents=True, exist_ok=True)
         BKG_DIR.mkdir(exist_ok=True)
         TRIM_DIR.mkdir(exist_ok=True)
+
         icon_data = self.get_gamedata("excel/medal_table.json")
         self.dict_advanced = {
             medal["medalId"]: medal["advancedMedal"]
             for medal in icon_data["medalList"]
             if medal.get("advancedMedal")
         }
-        metadata_paths = await self.get_metadata_paths()
-        async with anyio.create_task_group() as tg:
-            for _, ab_path in metadata_paths:
-                tg.start_soon(self.unpack_metadata, ab_path)
 
-        async with anyio.create_task_group() as tg:
-            for _, ab_path in paths:
-                tg.start_soon(self.unpack_ab, ab_path)
+        paths = await self.client.resolves(list(self.ab_list))
+        resolved_paths = [path[1] for path in paths]
+        resolved_filenames: list[str] = [
+            Path(resolved_path).name for resolved_path in resolved_paths
+        ]
+        env = UnityPy.load(*self.client.anon_paths, *resolved_paths)
+
+        metadata_paths = await self.client.resolves(
+            list(
+                {
+                    bundle
+                    for asset, bundle in self.client.asset_to_bundle.items()
+                    if asset.startswith("ui/medal/[uc]groupframe")
+                }
+            )
+        )
+        resolved_metadata_paths = [path[1] for path in metadata_paths]
+        resolved_metadata_filenames = [
+            Path(resolved_path).name for resolved_path in resolved_metadata_paths
+        ]
+        metadata_env = UnityPy.load(*self.client.anon_paths, *resolved_metadata_paths)
+
+        await self.unpack_metadata(metadata_env, resolved_metadata_filenames)
+        await self.unpack_ab(env, resolved_filenames)

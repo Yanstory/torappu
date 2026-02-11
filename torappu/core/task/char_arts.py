@@ -21,10 +21,10 @@ class CharArts(Task):
     priority: ClassVar[int] = 3
 
     @run_sync
-    def unpack(self, env: UnityPy.Environment, resolved_paths: list[str]):
+    def unpack(self, env: UnityPy.Environment, unpacking_source: list[str]):
         for obj in filter(lambda obj: obj.type.name == "MonoBehaviour", env.objects):
             source = get_source(obj)
-            if source not in resolved_paths:
+            if source not in unpacking_source:
                 continue
 
             if (behaviour := read_obj(MonoBehaviour, obj)) is None:

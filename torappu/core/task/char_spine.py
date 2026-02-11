@@ -1,5 +1,6 @@
 import asyncio
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, cast
 
 import UnityPy
@@ -8,11 +9,18 @@ from UnityPy.classes import GameObject
 
 from torappu.consts import STORAGE_DIR
 from torappu.core.client import Client
+from torappu.core.utils import run_sync
 from torappu.log import logger
 from torappu.models import Diff
 
 from .task import Task
-from .utils import build_container_path, m_script_to_bytes, material2img, read_obj
+from .utils import (
+    build_container_path,
+    get_source,
+    m_script_to_bytes,
+    material2img,
+    read_obj,
+)
 
 if TYPE_CHECKING:
     from UnityPy.classes import Material, MonoBehaviour, PPtr, TextAsset
@@ -82,10 +90,8 @@ class CharSpine(Task):
             file=f"{skin}/{side}/{filename}"
         )
 
-    async def unpack_ab(self, real_path):
-        env = UnityPy.load(real_path)
-        self.load_anon(env)
-
+    @run_sync
+    def unpack_ab(self, env: UnityPy.Environment, unpacking_source: str):
         container_map = build_container_path(env)
 
         def unpack(
@@ -126,8 +132,12 @@ class CharSpine(Task):
             return skel_name
 
         for obj in filter(lambda obj: obj.type.name == "GameObject", env.objects):
+            if get_source(obj) != unpacking_source:
+                continue
+
             if (game_obj := read_obj(GameObject, obj)) is None:
                 continue
+
             if (
                 game_obj.m_Name != "Spine"
                 and game_obj.m_Name != "Front"
@@ -135,6 +145,7 @@ class CharSpine(Task):
                 and game_obj.m_Name != "Down"
             ):
                 continue
+
             name = None
             skin = "defaultskin"
             side_map = {
@@ -197,7 +208,7 @@ class CharSpine(Task):
                 lambda comp: comp.type.name == "MonoBehaviour",
                 game_obj.m_Components,
             ):
-                skeleton_animation: MonoBehaviour = comp.deref_parse_as_object()
+                skeleton_animation = comp.deref_parse_as_object()
                 if (
                     skeleton_data := getattr(
                         skeleton_animation, "skeletonDataAsset", None
@@ -212,7 +223,9 @@ class CharSpine(Task):
 
     async def unpack(self, ab_path: str):
         real_path = await self.client.resolve(ab_path)
-        await self.unpack_ab(real_path)
+        await self.unpack_ab(
+            UnityPy.load(*self.client.anon_paths, real_path), Path(real_path).name
+        )
 
     async def start(self):
         char_table = self.get_gamedata("excel/character_table.json")

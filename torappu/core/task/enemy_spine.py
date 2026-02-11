@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, cast
 
 import UnityPy
@@ -6,10 +7,17 @@ from UnityPy.classes import GameObject, MonoBehaviour
 
 from torappu.consts import STORAGE_DIR
 from torappu.core.client import Client
+from torappu.core.utils import run_sync
 from torappu.models import Diff
 
 from .task import Task
-from .utils import build_container_path, m_script_to_bytes, material2img, read_obj
+from .utils import (
+    build_container_path,
+    get_source,
+    m_script_to_bytes,
+    material2img,
+    read_obj,
+)
 
 if TYPE_CHECKING:
     from UnityPy.classes import Material, PPtr, TextAsset
@@ -33,10 +41,8 @@ class EnemySpine(Task):
 
         return len(self.ab_list) > 0
 
-    async def unpack_ab(self, real_path):
-        env = UnityPy.load(real_path)
-        self.load_anon(env)
-
+    @run_sync
+    def unpack_ab(self, env: UnityPy.Environment, unpacking_source: str):
         container_map = build_container_path(env)
 
         def unpack(data: MonoBehaviour, path: str):
@@ -61,8 +67,12 @@ class EnemySpine(Task):
                     img.save(img_path)
 
         for obj in filter(lambda obj: obj.type.name == "GameObject", env.objects):
+            if get_source(obj) != unpacking_source:
+                continue
+
             if (game_obj := read_obj(GameObject, obj)) is None:
                 continue
+
             if game_obj.m_Name == "Spine" and game_obj.object_reader is not None:
                 path = (
                     container_map[game_obj.object_reader.path_id]
@@ -87,7 +97,9 @@ class EnemySpine(Task):
 
     async def unpack(self, ab_path: str):
         real_path = await self.client.resolve(ab_path)
-        await self.unpack_ab(real_path)
+        await self.unpack_ab(
+            UnityPy.load(*self.client.anon_paths, real_path), Path(real_path).name
+        )
 
     async def start(self):
         await asyncio.gather(*(self.client.resolve(ab) for ab in self.ab_list))
