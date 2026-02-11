@@ -140,7 +140,7 @@ class Task(BaseTask):
             path.symlink_to(source)
 
     async def start(self):
-        paths = await self.client.resolves(list(self.ab_list))
+        paths = await self.client.fetch_asset_bundles(list(self.ab_list))
         await asyncio.gather(
             *(self.extract(real_path, ab_path) for ab_path, real_path in paths)
         )

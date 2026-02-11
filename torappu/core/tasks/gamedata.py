@@ -290,7 +290,7 @@ class Task(BaseTask):
         output_path.write_text(pack_data, encoding="utf-8")
 
     async def unpack(self, ab_path: str):
-        real_path = await self.client.resolve(ab_path)
+        real_path = await self.client.fetch_asset_bundle(ab_path)
         env = UnityPy.load(real_path)
         for path, object in env.container.items():
             if isinstance((asset := object.read()), TextAsset):
@@ -303,7 +303,9 @@ class Task(BaseTask):
             if key.startswith("gamedata")
         ]
         gamedata_abs = list(set(gamedata_abs))
-        await asyncio.gather(*(self.client.resolve(ab) for ab in gamedata_abs))
+        await asyncio.gather(
+            *(self.client.fetch_asset_bundle(ab) for ab in gamedata_abs)
+        )
         await asyncio.gather(*(self.unpack(ab) for ab in gamedata_abs))
 
         if platform.system() != "Windows":

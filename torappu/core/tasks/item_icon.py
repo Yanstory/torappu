@@ -126,7 +126,7 @@ class Task(BaseTask):
         return len(self.ab_list) > 0
 
     async def start(self):
-        paths = await self.client.resolves(list(self.ab_list))
+        paths = await self.client.fetch_asset_bundles(list(self.ab_list))
         BASE_DIR.mkdir(parents=True, exist_ok=True)
         RAW_DIR.mkdir(parents=True, exist_ok=True)
 

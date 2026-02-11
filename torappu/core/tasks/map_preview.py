@@ -78,9 +78,11 @@ class Task(BaseTask):
         )
 
     async def start(self):
-        paths = await self.client.resolves(list(self.ab_list))
-        original_paths = await self.client.resolves(list(self.original_ab_list))
-        big_paths = await self.client.resolves(list(self.big_list))
+        paths = await self.client.fetch_asset_bundles(list(self.ab_list))
+        original_paths = await self.client.fetch_asset_bundles(
+            list(self.original_ab_list)
+        )
+        big_paths = await self.client.fetch_asset_bundles(list(self.big_list))
         BASE_DIR.mkdir(parents=True, exist_ok=True)
 
         async with anyio.create_task_group() as tg:

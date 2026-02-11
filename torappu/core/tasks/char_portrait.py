@@ -47,7 +47,7 @@ class Task(BaseTask):
         return len(self.ab_list) > 0
 
     async def start(self):
-        paths = await self.client.resolves(list(self.ab_list))
+        paths = await self.client.fetch_asset_bundles(list(self.ab_list))
         resolved_paths = [path[1] for path in paths]
         resolved_filenames: list[str] = [
             Path(resolved_path).name for resolved_path in resolved_paths

@@ -147,14 +147,14 @@ class Task(BaseTask):
             if medal.get("advancedMedal")
         }
 
-        paths = await self.client.resolves(list(self.ab_list))
+        paths = await self.client.fetch_asset_bundles(list(self.ab_list))
         resolved_paths = [path[1] for path in paths]
         resolved_filenames: list[str] = [
             Path(resolved_path).name for resolved_path in resolved_paths
         ]
         env = UnityPy.load(*self.client.anon_paths, *resolved_paths)
 
-        metadata_paths = await self.client.resolves(
+        metadata_paths = await self.client.fetch_asset_bundles(
             list(
                 {
                     bundle

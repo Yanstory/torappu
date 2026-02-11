@@ -37,6 +37,41 @@ class SpineConfig(BaseModel):
     skin: dict[str, dict[str, FileConfig]]
 
 
+def unpack_asset(data: MonoBehaviour, path: str) -> str:
+    base_dir = STORAGE_DIR / "asset" / "raw" / "char_spine" / path
+    skel = cast("TextAsset", data.skeletonJSON.read())  # type: ignore
+    skel_name: str = skel.m_Name.replace("#", "_")
+    skel_dest_path = base_dir / skel_name
+
+    if skel_name.endswith(".skel"):
+        skel_name = skel_name.replace(".skel", "")
+
+    if not skel_dest_path.name.endswith(".skel"):
+        skel_dest_path = skel_dest_path.with_suffix(".skel")
+
+    if not base_dir.exists():
+        base_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(skel_dest_path, "wb") as f:
+        f.write(m_script_to_bytes(skel.m_Script))
+
+    atlas_assets: list[PPtr] = data.atlasAssets  # type: ignore
+    for pptr in atlas_assets:
+        atlas_mono_behaviour: MonoBehaviour = pptr.read()
+        atlas: TextAsset = atlas_mono_behaviour.atlasFile.read()  # type: ignore
+        # 文件名上不能有`#`，都替换成`_`
+        atlas_content = re.sub(r"#([^.]*\.png)", r"_\1", atlas.m_Script)
+        with open(base_dir / atlas.m_Name.replace("#", "_"), "w") as f:
+            f.write(atlas_content)
+        materials: list[PPtr] = atlas_mono_behaviour.materials  # type: ignore
+        for mat_pptr in materials:
+            mat: Material = mat_pptr.read()
+            img, name = material2img(mat)
+            img.save(base_dir / (name.replace("#", "_") + ".png"))
+
+    return skel_name
+
+
 class Task(BaseTask):
     priority: ClassVar[int] = 2
     name = "CharSpine"
@@ -95,43 +130,6 @@ class Task(BaseTask):
     @run_sync
     def unpack_ab(self, env: UnityPy.Environment, unpacking_source: str):
         container_map = build_container_path(env)
-
-        def unpack(
-            data: "MonoBehaviour",
-            path: str,
-        ) -> str:
-            base_dir = STORAGE_DIR / "asset" / "raw" / "char_spine" / path
-            skel = cast("TextAsset", data.skeletonJSON.read())  # type: ignore
-            skel_name: str = skel.m_Name.replace("#", "_")
-            skel_dest_path = base_dir / skel_name
-
-            if skel_name.endswith(".skel"):
-                skel_name = skel_name.replace(".skel", "")
-
-            if not skel_dest_path.name.endswith(".skel"):
-                skel_dest_path = skel_dest_path.with_suffix(".skel")
-
-            if not base_dir.exists():
-                base_dir.mkdir(parents=True, exist_ok=True)
-
-            with open(skel_dest_path, "wb") as f:
-                f.write(m_script_to_bytes(skel.m_Script))
-
-            atlas_assets: list[PPtr] = data.atlasAssets  # type: ignore
-            for pptr in atlas_assets:
-                atlas_mono_behaviour: MonoBehaviour = pptr.read()
-                atlas: TextAsset = atlas_mono_behaviour.atlasFile.read()  # type: ignore
-                # 文件名上不能有`#`，都替换成`_`
-                atlas_content = re.sub(r"#([^.]*\.png)", r"_\1", atlas.m_Script)
-                with open(base_dir / atlas.m_Name.replace("#", "_"), "w") as f:
-                    f.write(atlas_content)
-                materials: list[PPtr] = atlas_mono_behaviour.materials  # type: ignore
-                for mat_pptr in materials:
-                    mat: Material = mat_pptr.read()
-                    img, name = material2img(mat)
-                    img.save(base_dir / (name.replace("#", "_") + ".png"))
-
-            return skel_name
 
         for obj in filter(lambda obj: obj.type.name == "GameObject", env.objects):
             if get_source(obj) != unpacking_source:
@@ -219,12 +217,12 @@ class Task(BaseTask):
                     break
                 data: MonoBehaviour = skeleton_data.read()
                 if data.m_Name.endswith("_SkeletonData"):
-                    if skel_name := unpack(data, f"{name}/{skin}/{side}"):
+                    if skel_name := unpack_asset(data, f"{name}/{skin}/{side}"):
                         self.update_config(name, skin, side, skel_name)
                     break
 
     async def unpack(self, ab_path: str):
-        real_path = await self.client.resolve(ab_path)
+        real_path = await self.client.fetch_asset_bundle(ab_path)
         await self.unpack_ab(
             UnityPy.load(*self.client.anon_paths, real_path), Path(real_path).name
         )
@@ -261,7 +259,9 @@ class Task(BaseTask):
                     "displaySkin"
                 ]["skinName"]
 
-        await asyncio.gather(*(self.client.resolve(ab) for ab in self.ab_list))
+        await asyncio.gather(
+            *(self.client.fetch_asset_bundle(ab) for ab in self.ab_list)
+        )
         await asyncio.gather(*(self.unpack(ab) for ab in self.ab_list))
 
         for char in filter(lambda c: c in self.char_map, self.changed_char):
