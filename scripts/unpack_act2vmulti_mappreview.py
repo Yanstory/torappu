@@ -6,7 +6,7 @@ from zipfile import ZipFile
 import anyio
 import httpx
 
-from torappu.core.task.map_preview import unpack_big
+from torappu.core.tasks.map_preview import unpack_big
 
 
 async def main():

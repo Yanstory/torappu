@@ -3,7 +3,7 @@ from pathlib import Path
 import anyio
 import httpx
 
-from torappu.core.task.map_preview import unpack_sandbox, unpack_universal
+from torappu.core.tasks.map_preview import unpack_sandbox, unpack_universal
 
 client = httpx.AsyncClient(timeout=60)
 

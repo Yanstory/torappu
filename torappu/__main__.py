@@ -4,14 +4,9 @@ import anyio
 import click
 
 from torappu import __version__
-from torappu.core import registry
 from torappu.log import logger
 
 from .models import Version
-
-TASKS_LIST_STRING = " ".join(
-    [task.__name__ for tasks in registry.values() for task in tasks]
-)
 
 
 @click.command(
@@ -28,8 +23,12 @@ TASKS_LIST_STRING = " ".join(
 @click.argument("res_version")
 @click.option("-c", "--prev-client-version", help="prev client version")
 @click.option("-r", "--prev-res-version", help="prev res version")
-@click.option("-e", "--exclude", help=TASKS_LIST_STRING)
-@click.option("-i", "--include", help=TASKS_LIST_STRING)
+@click.option(
+    "-e", "--exclude", help="excluded tasks, if specified, these tasks will be excluded"
+)
+@click.option(
+    "-i", "--include", help="included tasks, if specified, only these tasks will be run"
+)
 def cli(
     client_version: str,
     res_version: str,

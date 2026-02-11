@@ -1,3 +1,7 @@
+import importlib
+import pkgutil
+from collections import defaultdict
+
 import anyio
 import lz4inv
 import sentry_sdk
@@ -12,11 +16,13 @@ from torappu.log import logger
 from torappu.models import Diff, Version
 
 from .client import Client
-from .task import Task, registry
+from .tasks.base import BaseTask
 
 # 2.5.04 25-04-03-14-16-11_4f0a01
 DECOMPRESSION_MAP[CompressionFlags.LZHAM] = lz4inv.decompress_buffer
 config = get_config()
+
+TASKS_MODULE_PATH = importlib.import_module("torappu.core.tasks").__path__
 
 
 def init_sentry(*, headless: bool):
@@ -34,7 +40,7 @@ def init_sentry(*, headless: bool):
     )
 
 
-async def check_and_run_task(instance: Task, diff: list[Diff]):
+async def check_and_run_task(instance: BaseTask, diff: list[Diff]):
     if not instance.check(diff):
         logger.info(f"Skipping task {type(instance).__name__}")
         return
@@ -63,6 +69,16 @@ async def main(
         return
 
     diff = client.diff()
+
+    registry: defaultdict[int, list[type[BaseTask]]] = defaultdict(list)
+    for _, name, _ in pkgutil.iter_modules(TASKS_MODULE_PATH):
+        module = importlib.import_module(f"torappu.core.tasks.{name}", __name__)
+        try:
+            klass = module.Task
+        except AttributeError:
+            continue
+        registry[klass.priority].append(klass)
+
     for priority in sorted(registry.keys()):
         logger.info(f"Checking for tasks in priority {priority}...")
 
