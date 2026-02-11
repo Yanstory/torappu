@@ -2,23 +2,24 @@
 
 ## Project Overview
 
-Torappu is an asset unpacker for an anime game (Arknights) focused on resource extraction and analysis. It provides a CLI interface for extracting game assets, processing them, and making them available through structured output directories.
+Torappu is an asset unpacker for Arknights focused on resource extraction and analysis. It provides a CLI for downloading asset bundles, diffing versions, and running task-based processors that emit structured output under `storage/`.
 
 ## Architecture
 
-The project follows a modular architecture with these key components:
-
-- **CLI Interface** (`torappu/__main__.py`): Command-line tool for asset extraction
-- **Task System** (`torappu/core/task/`): Pluggable task architecture for processing different asset types
-- **Client** (`torappu/core/client.py`): Handles remote asset fetching and local caching
-- **Asset Processing**: UnityPy-based asset extraction and FlatBuffer schema parsing
+- **CLI Interface** (`torappu/__main__.py`): Click-based CLI entry point that runs the async pipeline via `anyio`.
+- **Core Orchestrator** (`torappu/core/__init__.py`): Loads task modules, groups by priority, and runs them concurrently per priority.
+- **Client** (`torappu/core/client.py`): Handles remote asset fetching, caching, manifest diffing, and path resolution.
+- **Task System** (`torappu/core/tasks/`): Individual task modules implement extraction for specific asset types.
 
 ## Key Directories
 
-- `torappu/core/task/` - Individual asset processing tasks (20+ specialized tasks)
-- `OpenArknightsFBS/` - FlatBuffer schema definitions for game data
-- `storage/` - Local cache for downloaded assets and processed data
-- `assets/` - Static assets and FlatBuffer schema definitions
+- `torappu/core/tasks/` - Task implementations (each module exposes a `Task` class)
+- `torappu/core/utils/` - Shared helpers for Unity asset parsing and IO
+- `torappu/core/wiki/` - Wiki integration helpers
+- `OpenArknightsFBS/` - FlatBuffer schema definitions
+- `assets/` - Static assets used by tasks
+- `bin/` - Bundled tools like `flatc` (platform-specific)
+- `storage/` - Local cache and extracted outputs (`assetbundle/`, `asset/`, `assets_storage/`, etc.)
 - `scripts/` - Utility scripts for data processing
 
 ## Development Commands
@@ -26,7 +27,6 @@ The project follows a modular architecture with these key components:
 ### Setup
 
 ```bash
-# Install project dependencies
 uv sync
 ```
 
@@ -39,7 +39,7 @@ python -m torappu [CLIENT_VERSION] [RES_VERSION]
 # With version comparison
 python -m torappu [CLIENT_VERSION] [RES_VERSION] -c [PREV_CLIENT_VERSION] -r [PREV_RES_VERSION]
 
-# Include/exclude specific tasks
+# Include/exclude specific tasks (by Task.name)
 python -m torappu [CLIENT_VERSION] [RES_VERSION] -i task1,task2
 python -m torappu [CLIENT_VERSION] [RES_VERSION] -e task1,task2
 ```
@@ -47,73 +47,74 @@ python -m torappu [CLIENT_VERSION] [RES_VERSION] -e task1,task2
 ### Docker Usage
 
 ```bash
-# Run directly with Docker
+# Build and run
+docker build -t torappu .
 docker run torappu [CLIENT_VERSION] [RES_VERSION]
-
-# With additional parameters
-docker run torappu [CLIENT_VERSION] [RES_VERSION] -c [PREV_CLIENT_VERSION] -r [PREV_RES_VERSION]
 ```
 
 ### Quality Assurance
 
 ```bash
-# Linting
 uv run ruff check .
 uv run ruff format .
-
-# Type checking (if pyright is available)
 pyright
 ```
 
 ## Configuration
 
-Environment variables (via `.env` file or system env):
+Settings are loaded via Pydantic and `.env` (see `torappu/config.py`). Common environment variables:
 
-- `TOKEN`: Authentication token for remote APIs
-- `ENDPOINT`: Backend API endpoint
-- `SENTRY_DSN`: Error reporting DSN
-- `ENVIRONMENT`: "production" or "debug"
+- `ENVIRONMENT`: `production` or `debug`
+- `LOG_LEVEL`: numeric or string log level (default `INFO`)
+- `TOKEN`: auth token for backend uploads
+- `TIMEOUT`: network timeout seconds (default `10`)
+- `BACKEND_ENDPOINT`: backend API base URL
+- `FLATC_PATH`: override bundled `flatc` path
+- `SENTRY_DSN`: Sentry DSN for error reporting
 
 ## Task System Architecture
 
-The task system uses a priority-based registry pattern:
-
-1. **Task Base Class** (`torappu/core/task/task.py`): Abstract base for all processing tasks
-2. **Registry**: `torappu.core.task.registry` maps priority levels to task classes
-3. **Task Priorities**: Lower numbers run first (priority 1 is highest)
-4. **Task Types**: Each task handles specific asset types (characters, maps, audio, etc.)
+- Base class: `torappu/core/tasks/base.py` (`BaseTask`)
+- Tasks are auto-discovered from `torappu.core.tasks.*` modules
+- Each module should export a `Task` class with `priority` and `name`
+- Tasks run in ascending priority order; tasks with the same priority run concurrently
+- `Task.name` is used for `-i/--include` and `-e/--exclude` CLI filters
 
 ### Adding New Tasks
 
 ```python
-from torappu.core.task import Task
+from typing import ClassVar
 
-class MyNewTask(Task):
-    priority = 5  # Execution priority
+from torappu.core.tasks.base import BaseTask
+from torappu.models import Diff
 
-    def check(self, diff_list):
-        # Return True if task should run based on diff
+
+class Task(BaseTask):
+    priority: ClassVar[int] = 5
+    name = "MyNewTask"
+
+    def check(self, diff_list: list[Diff]) -> bool:
         return any(d.path.startswith("my/prefix") for d in diff_list)
 
     async def start(self):
-        # Task implementation
-        pass
+        ...
 ```
 
 ## Asset Pipeline
 
-1. **Remote Fetching**: Client downloads asset bundles from game CDN
-2. **Local Caching**: Assets cached in `storage/assetbundle/[hash]`
-3. **UnityPy Processing**: Unity asset extraction using UnityPy
-4. **Task Processing**: Specialized tasks process specific asset types
-5. **Output Generation**: Processed assets saved to structured directories
+1. **Remote Fetching**: Client downloads asset bundles from the CDN
+2. **Local Caching**: Bundles cached under `storage/assetbundle/`
+3. **UnityPy Processing**: Unity assets parsed for extraction
+4. **Task Processing**: Tasks run based on version diffs and filters
+5. **Output Generation**: Results written to structured paths under `storage/`
 
 ## Key Dependencies
 
 - **UnityPy**: Unity asset extraction
 - **httpx**: HTTP client for remote asset fetching
-- **Pydantic**: Data validation and settings management
+- **Pydantic Settings**: Configuration management
 - **Loguru**: Structured logging
 - **lz4inv**: LZ4 decompression for asset bundles
 - **pycryptodome**: Cryptographic operations
 - **tenacity**: Retry logic for network operations
+- **click** / **anyio**: CLI and async runtime
