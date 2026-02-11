@@ -2,7 +2,6 @@ import abc
 from typing import ClassVar
 
 from torappu.core.client import Client
-from torappu.log import logger
 from torappu.models import Diff
 
 
