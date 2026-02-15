@@ -42,7 +42,7 @@ def init_sentry(*, headless: bool):
 
 async def check_and_run_task(instance: BaseTask, diff: list[Diff]):
     if not instance.check(diff):
-        logger.info(f"Skipping task {type(instance).__name__}")
+        logger.info(f"Skipping task {instance.name}")
         return
 
     try:
@@ -50,7 +50,7 @@ async def check_and_run_task(instance: BaseTask, diff: list[Diff]):
         await instance.start()
         logger.info(f"Finished task {instance.name}")
     except Exception as e:
-        logger.opt(exception=e).error(f"Running {type(instance).__name__} failed.")
+        logger.opt(exception=e).error(f"Running {instance.name} failed.")
 
 
 async def main(
