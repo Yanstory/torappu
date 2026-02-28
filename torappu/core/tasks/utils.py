@@ -1,6 +1,5 @@
 import json
 from asyncio.subprocess import Process
-from typing import TypeVar
 
 import numpy as np
 from PIL import Image
@@ -10,10 +9,8 @@ from UnityPy.files.ObjectReader import ObjectReader
 
 from torappu.consts import GAMEDATA_DIR, PROFESSIONS
 
-T = TypeVar("T")
 
-
-def read_obj(expected_klass: type[T], obj: ObjectReader[T]) -> T | None:
+def read_obj[T](expected_klass: type[T], obj: ObjectReader[T]) -> T | None:
     if expected_klass == obj.get_class():
         return obj.read()
     else:
