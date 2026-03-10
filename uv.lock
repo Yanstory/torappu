@@ -900,7 +900,7 @@ wheels = [
 
 [[package]]
 name = "torappu"
-version = "1.33.8"
+version = "1.34.0"
 source = { editable = "." }
 dependencies = [
     { name = "bson" },

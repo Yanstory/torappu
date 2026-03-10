@@ -1,6 +1,6 @@
 [project]
 name = "torappu"
-version = "1.33.8"
+version = "1.34.0"
 description = "unpacker for an anime game"
 authors = [
   { name = "daflyinbed", email = "1677759063@qq.com" },
