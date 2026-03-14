@@ -10,7 +10,7 @@ import httpx
 import UnityPy
 from ark_fbs import Options as FBOptions
 from ark_fbs import Schema as FBSchema
-from tenacity import retry, wait_random_exponential
+from tenacity import retry, stop_after_attempt
 from UnityPy.classes import MonoBehaviour
 
 from torappu.config import Config
@@ -32,6 +32,18 @@ resource_manifest_schema: FBSchema = FBSchema.from_fbs_file(
     include_paths=["assets"],
     options=FBOptions(),
 )
+
+
+def _log_retry(name: str):
+    def _before_sleep(retry_state):
+        exc = (
+            retry_state.outcome.exception()
+            if retry_state.outcome and retry_state.outcome.failed
+            else None
+        )
+        logger.warning(f"Retrying {name} after failure: {exc!r}")
+
+    return _before_sleep
 
 
 class Client:
@@ -114,7 +126,10 @@ class Client:
             else None
         )
 
-    @retry(wait=wait_random_exponential(multiplier=1, max=60))
+    @retry(
+        stop=stop_after_attempt(2),
+        before_sleep=_log_retry("load_remote_hot_update_list"),
+    )
     async def load_remote_hot_update_list(self, res_version: str) -> HotUpdateInfo:
         logger.debug(f"Downloading hot update list (res_version: {res_version})")
 
@@ -140,7 +155,10 @@ class Client:
             filter(lambda info: info.name == path, self.hot_update_list.ab_infos)
         )
 
-    @retry(wait=wait_random_exponential(multiplier=1, max=60))
+    @retry(
+        stop=stop_after_attempt(2),
+        before_sleep=_log_retry("download_ab"),
+    )
     async def download_ab(self, path: str) -> tuple[bytes, int]:
         logger.debug(f"Downloading {path}")
         filename = f"{hg_normalize_url(path.rsplit('.')[0])}.dat"
