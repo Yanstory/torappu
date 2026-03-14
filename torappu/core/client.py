@@ -45,7 +45,7 @@ class Client:
         self.asset_to_bundle: dict[str, str] = {}
         self.downloaded: dict[str, Path] = {}
         self.anon_paths: set[str] = set()
-        # de-duplicate ab download requests
+        self._download_semaphore = asyncio.Semaphore(config.max_concurrent_downloads)
         self._download_lock = asyncio.Lock()
         self._downloading_tasks: dict[str, asyncio.Task[str]] = {}
 
@@ -137,12 +137,11 @@ class Client:
     @retry(wait=wait_random_exponential(multiplier=1, max=60))
     async def download_ab(self, path: str) -> tuple[bytes, int]:
         filename = f"{hg_normalize_url(path.rsplit('.')[0])}.dat"
-
-        resp = await self.http_client.get(
-            HG_CN_BASEURL.join(f"{self.version.res_version}/{filename}")
-        )
+        async with self._download_semaphore:
+            resp = await self.http_client.get(
+                HG_CN_BASEURL.join(f"{self.version.res_version}/{filename}")
+            )
         logger.debug(f"Downloaded {filename}")
-
         return (resp.content, int(resp.headers["x-oss-hash-crc64ecma"]))
 
     def _check_cached_ab_path(
