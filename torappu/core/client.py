@@ -136,6 +136,7 @@ class Client:
 
     @retry(wait=wait_random_exponential(multiplier=1, max=60))
     async def download_ab(self, path: str) -> tuple[bytes, int]:
+        logger.debug(f"Downloading {path}")
         filename = f"{hg_normalize_url(path.rsplit('.')[0])}.dat"
         async with self._download_semaphore:
             resp = await self.http_client.get(
