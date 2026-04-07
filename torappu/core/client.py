@@ -41,7 +41,15 @@ def _log_retry(name: str):
             if retry_state.outcome and retry_state.outcome.failed
             else None
         )
-        logger.warning(f"Retrying {name} after failure: {exc!r}")
+        # 跳过 self/cls
+        args = retry_state.args[1:] if retry_state.args else ()
+        call_args = ", ".join(
+            [
+                *(repr(a) for a in args),
+                *(f"{k}={v!r}" for k, v in retry_state.kwargs.items()),
+            ]
+        )
+        logger.warning(f"Retrying {name}({call_args}) after failure: {exc!r}")
 
     return _before_sleep
 
