@@ -18,9 +18,6 @@ class Config(BaseSettings):
     token: str | None = None
     timeout: int = 10
 
-    max_keepalive_connections: int = 5
-    max_connections: int = 10
-
     max_concurrent_downloads: int = 16
 
     backend_endpoint: str | None = None
