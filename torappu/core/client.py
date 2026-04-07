@@ -41,7 +41,7 @@ def _log_retry(name: str):
             if retry_state.outcome and retry_state.outcome.failed
             else None
         )
-        # 跳过 self/cls
+        # skipping self/cls in args
         args = retry_state.args[1:] if retry_state.args else ()
         call_args = ", ".join(
             [
