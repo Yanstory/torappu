@@ -62,11 +62,7 @@ class Client:
         self.prev_version = prev_version
         self.config = config
         self.http_client = httpx.AsyncClient(
-            timeout=config.timeout,
-            limits=httpx.Limits(
-                max_keepalive_connections=config.max_keepalive_connections,
-                max_connections=config.max_connections,
-            ),
+            timeout=httpx.Timeout(config.timeout, pool=None),
         )
         self.asset_to_bundle: dict[str, str] = {}
         self.downloaded: dict[str, Path] = {}
