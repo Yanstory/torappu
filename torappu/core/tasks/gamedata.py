@@ -3,6 +3,7 @@ import base64
 import json
 import os
 import platform
+import struct
 from pathlib import Path
 from typing import ClassVar
 
@@ -159,8 +160,12 @@ class Task(BaseTask):
         relative_path = path.replace("dyn/gamedata/", "")
         output_name = self._get_flatbuffer_output_name(relative_path, fb_name)
         raw = m_script_to_bytes(obj.m_Script)
-        # bake_muzzle_data: 4 bytes padding + 6 bytes hash (abcdef)
-        flatbuffer_data = raw[10:] if fb_name == "bake_muzzle_data" else raw[128:]
+        if fb_name == "bake_muzzle_data":
+            # u32 name length + name bytes, then the flatbuffer
+            (name_len,) = struct.unpack_from("<I", raw, 0)
+            flatbuffer_data = raw[4 + name_len:]
+        else:
+            flatbuffer_data = raw[128:]
         try:
             schema = self._get_flatbuffer_schema(fb_name)
             logger.debug(f"Decoding flatbuffer {fb_name!r} for asset {path!r}...")
