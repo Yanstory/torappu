@@ -18,6 +18,7 @@ from torappu.consts import FBS_DIR, STORAGE_DIR
 from torappu.core.client import Client
 from torappu.core.tasks.utils import m_script_to_bytes
 from torappu.core.utils.thread import run_sync
+from torappu.log import logger
 from torappu.models import Diff
 
 from .base import BaseTask
@@ -157,9 +158,12 @@ class Task(BaseTask):
     def _decode_flatbuffer(self, path: str, obj: TextAsset, fb_name: str):
         relative_path = path.replace("dyn/gamedata/", "")
         output_name = self._get_flatbuffer_output_name(relative_path, fb_name)
-        flatbuffer_data = m_script_to_bytes(obj.m_Script)[128:]
+        raw = m_script_to_bytes(obj.m_Script)
+        # bake_muzzle_data: 4 bytes padding + 6 bytes hash (abcdef)
+        flatbuffer_data = raw[10:] if fb_name == "bake_muzzle_data" else raw[128:]
         try:
             schema = self._get_flatbuffer_schema(fb_name)
+            logger.debug(f"Decoding flatbuffer {fb_name!r} for asset {path!r}...")
             jsons = json.loads(schema.binary_to_json(flatbuffer_data))
         except Exception as exc:
             raise RuntimeError(
