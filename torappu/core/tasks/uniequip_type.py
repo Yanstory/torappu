@@ -1,3 +1,4 @@
+import os
 from typing import ClassVar
 
 import anyio
@@ -5,6 +6,7 @@ import UnityPy
 from UnityPy.classes import Sprite
 
 from torappu.consts import STORAGE_DIR
+from torappu.core.client import Client
 from torappu.core.tasks.utils import read_obj
 from torappu.models import Diff
 
@@ -17,11 +19,20 @@ class Task(BaseTask):
     priority: ClassVar[int] = 3
     name = "UniEquipType"
 
+    def __init__(self, client: Client) -> None:
+        super().__init__(client)
+
     async def unpack(self, ab_path: str):
         env = UnityPy.load(ab_path)
         for obj in filter(lambda obj: obj.type.name == "Sprite", env.objects):
             if texture := read_obj(Sprite, obj):
-                texture.image.save(BASE_DIR.joinpath(f"{texture.m_Name}.png"))
+                if texture.object_reader is None:
+                    continue
+                container_path = texture.object_reader.container
+                filename = os.path.basename(container_path)
+                if not filename.lower().endswith(".png"):
+                    filename = f"{filename}.png"
+                texture.image.save(BASE_DIR.joinpath(filename))
 
     def check(self, diff_list: list[Diff]) -> bool:
         diff_set = {diff.path for diff in diff_list}
