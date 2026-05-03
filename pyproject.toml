@@ -1,6 +1,6 @@
 [project]
 name = "torappu"
-version = "1.38.2"
+version = "1.38.3"
 description = "unpacker for arknights"
 authors = [
   { name = "daflyinbed", email = "1677759063@qq.com" },
@@ -78,7 +78,6 @@ pythonPlatform = "All"
 executionEnvironments = [{ root = "./" }]
 
 typeCheckingMode = "standard"
-reportShadowedImports = false
 disableBytesTypePromotions = true
 
 [tool.uv.build-backend]
